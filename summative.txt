@@ -1,0 +1,26 @@
+Distributed Systems Part 1
+Question 1(a)
+The basic principle is that clients send their requests to a primary which executes the requests and sends update messages to the backups. The backups do not execute any invocations but apply the changes produced by the invocation execution at the primary. Invocations therefore do not need to be coordinated.
+
+(a) Incoming request
+- Received by the front end, and the front end will forward the request to a primary replica. This request will contain a unique identifier.
+(b) Coordination
+- Decide the ordering of a request relative to other requests. The primary replica will process each request automatically, in the order in which it receives it relative to other requests. It checks the unique ID on the request that it receives, and if it has already processed the request then it will re-send the response to the client. (Handling message loss). Gurantees that updates are processed in the same order, which is the case if primary backup communication is based on FIFO. But this is insufficient to ensure correct execution in case of failure of the primary. In case of failure of the primary, and a replica takes over as the new primary, mechanisms have to be put in place to ensure the updates sent by the new primary are properly ordered.
+(c) Execution
+- The primary processes the requests and stores its response
+(d) Agreement
+- The replicas achieve a consensus on the effect of the requests. So, if the request is for an update then the primary will send the updated state, the response and the unique identifier to all the backups, which will store the information in a process called result propagation. The backups send an acknowledgement to the primary to confirm receipt of the information.
+(e) Response
+- The primary replica responds to the front end, which will then process the response before returning it to the client
+
+Although it uses little processing power when compared to other replication techniques, passive replication suffers from a high reconfiguration cost when the primary fails.
+
+Question 1(b) ^ Ref: http://www.cs.usfca.edu/~srollins/courses/cs682-s08/web/notes/replication.html
+Passive replication ensures information availability because even in the event that the primary server fails, a secondary replica manager can take its place. To communicate updates while ensuring that we can tolerate a failure of the primary replica before, during and after updating, we use group membership communication, which must include the following features:
+- provide an interface for membership changes
+- provide a failure detector
+- notify members of membership changes
+- perform address expansion to ensure that messages sent to the group reach all replicas
+With this, we can provide view-synchronous communication, which is an extension of reliable multicast. A view is a list of the processes currently belonging to the group and when membership changes, a new view is sent to all members. the backups send an acknowledgement to the primary server to confirm receipt of the information, and in case of non-ack from a replica, the message will be re-sent by the primary server. All messages that originate in a given view must be delivered before a new view is delivered. This form of communication is costly and may require serveral rounds of communication for each multicast. Because each replica has the same record of updates, passive replication can tolerate n crash failures if n+1 replicas are present. The view-synchronous semantics guarantee that either all the backups or none of them will deliver any given update before delivering the new view; the primary and the surviving backups all agree on whether any particular client's update has or has not been processed.
+
+
