@@ -99,14 +99,54 @@ def authenticate(clientsock, addr, user):
 
 def createUser(username, clientsock, addr, registeredUsers):
     clientsock.sendto(bytes("We did not recognize your username, so we created one for you!", "utf-8"), addr)
-    passwordGiven = bytes.decode(clientsock.recv(1024))
+    passwordGiven = bytes.decode(clientsock.recv(1024), "utf-8")
     newUser = User(username, passwordGiven)
     registeredUsers.addUser(newUser)
-    print(registeredUsers)
+    # print(registeredUsers)
 
 
 def getUsernameIndex(username, registeredUsers):
-    registeredUsers.userList.index(User.username)
+    for i in range(0, len(registeredUsers.userList)):
+        if registeredUsers.userList[i].username == username:
+            return i
+
+def placeOrder(usernameIndex, clientsock, addr, registeredUsers):
+    orderReceived = bytes.decode(clientsock.recv(1024), "utf-8")
+    orderReceived = [x.strip() for x in orderReceived.split(',')]
+    if len(orderReceived) > 3:
+        clientsock.sendto(bytes("Unable to make purchases; you made more purchases than allowed!"))
+    orderReceived = tuple(orderReceived)
+    registeredUsers.userList[usernameIndex].placeOrder(orderReceived)
+    print(registeredUsers.userList[usernameIndex])
+
+
+def beginGame(usernameIndex, clientsock, addr, registeredUsers):
+    clientsock.sendto(bytes("SHOP", "utf-8"), addr)
+    print("Opening SHOP")
+    clientsock.sendto(bytes("""
+────────▄███████████▄────────
+─────▄███▓▓▓▓▓▓▓▓▓▓▓███▄─────
+────███▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓███────  WELCOME TO THE SHOP
+───██▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓██───  What would you like to purchase?
+──██▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓██──  1) Pokeball
+─██▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓██─  2) Ultraball
+██▓▓▓▓▓▓▓▓▓███████▓▓▓▓▓▓▓▓▓██  3) Masterball
+██▓▓▓▓▓▓▓▓██░░░░░██▓▓▓▓▓▓▓▓██  4) Potion
+██▓▓▓▓▓▓▓██░░███░░██▓▓▓▓▓▓▓██  5) Super Potion
+███████████░░███░░███████████  6) Incense
+██░░░░░░░██░░███░░██░░░░░░░██  7) Egg Incubator
+██░░░░░░░░██░░░░░██░░░░░░░░██  8) Razz Berry
+██░░░░░░░░░███████░░░░░░░░░██  9) Revive
+─██░░░░░░░░░░░░░░░░░░░░░░░██─  10) Max Revive
+──██░░░░░░░░░░░░░░░░░░░░░██──
+───██░░░░░░░░░░░░░░░░░░░██───
+────███░░░░░░░░░░░░░░░███────
+─────▀███░░░░░░░░░░░███▀─────
+────────▀███████████▀────────
+""", "utf-8"), addr)
+    placeOrder(usernameIndex, clientsock, addr, registeredUsers)
+    clientsock.sendto(bytes("Purchases logged", "utf-8"), addr)
+
 
 
 #####################################################################
@@ -136,7 +176,9 @@ def handler(clientsock, addr, registeredUsers):
         if not userExists:
             createUser(username, clientsock, addr, registeredUsers)
             clientsock.sendto(bytes("True", "utf-8"), addr)
+        usernameIndex = getUsernameIndex(username, registeredUsers)
         clientsock.sendto(bytes(startGreeting(), "utf-8"), addr)
+        beginGame(usernameIndex, clientsock, addr, registeredUsers)
     while True:
         data = clientsock.recv(1024)
         if not (data):
@@ -172,4 +214,3 @@ def createSocket(registeredUsers):
 if __name__ == '__main__':
     registeredUsers = RegisteredUsers()
     createSocket(registeredUsers)
-    print(getUsernameIndex("jrvh15", registeredUsers))

@@ -30,11 +30,27 @@ def connectToServer():
         # After authentication
         welcome = serverSocket.recv(4096)
         print(bytes.decode(welcome, "utf-8"))
-
-    # TODO: Fix this
-    else:
         while True:
-            serverSocket.recv(2048)
+            packet = bytes.decode(serverSocket.recv(1024), "utf-8")
+            if packet:
+                print("                            " + packet)
+                if packet == "SHOP":
+                    openShop()
+            if not packet: break
+
+
+    # TODO: What happens when you're not authenticated?
+    # else:
+
+
+def openShop():
+    shopGreeting = bytes.decode(serverSocket.recv(4096), "utf-8")
+    print(shopGreeting)
+    choice = input("""
+If I want to purchase a Pokeball, a Potion, and a Razz Berry, I place the order as follows:
+      1, 4, 8
+Your turn! Choose up to a max of 3 items to purchase: """)
+    serverSocket.send(bytes(choice, "utf-8"))
 
 
 def mainGreeting():
