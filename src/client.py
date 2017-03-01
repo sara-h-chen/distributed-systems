@@ -54,9 +54,28 @@ def connectToServer():
 
 
 def openShop():
-    shopGreeting = bytes.decode(serverSocket.recv(4096), "utf-8")
-    print(shopGreeting)
     choice = input("""
+    ────────▄███████████▄────────
+    ─────▄███▓▓▓▓▓▓▓▓▓▓▓███▄─────
+    ────███▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓███────  WELCOME TO THE SHOP
+    ───██▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓██───  What would you like to purchase?
+    ──██▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓██──  1) Pokeball
+    ─██▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓██─  2) Ultraball
+    ██▓▓▓▓▓▓▓▓▓███████▓▓▓▓▓▓▓▓▓██  3) Masterball
+    ██▓▓▓▓▓▓▓▓██░░░░░██▓▓▓▓▓▓▓▓██  4) Potion
+    ██▓▓▓▓▓▓▓██░░███░░██▓▓▓▓▓▓▓██  5) Super Potion
+    ███████████░░███░░███████████  6) Incense
+    ██░░░░░░░██░░███░░██░░░░░░░██  7) Egg Incubator
+    ██░░░░░░░░██░░░░░██░░░░░░░░██  8) Razz Berry
+    ██░░░░░░░░░███████░░░░░░░░░██  9) Revive
+    ─██░░░░░░░░░░░░░░░░░░░░░░░██─  10) Max Revive
+    ──██░░░░░░░░░░░░░░░░░░░░░██──
+    ───██░░░░░░░░░░░░░░░░░░░██───
+    ────███░░░░░░░░░░░░░░░███────
+    ─────▀███░░░░░░░░░░░███▀─────
+    ────────▀███████████▀────────
+
+
 If I want to purchase a Pokeball, a Potion, and a Razz Berry, I place the order as follows:
       1, 4, 8
 Your turn! Choose up to a max of 3 items to purchase: """)
@@ -95,7 +114,7 @@ def mainMenu():
 
 
 def viewOrders():
-    ordersMade = bytes.decode(serverSocket.recv(4096), "utf-8")
+    ordersMade = bytes.decode(serverSocket.recv(1024), "utf-8")
     print("""
                .-. \_/ .-.
                \.-\/=\/.-/
@@ -113,7 +132,7 @@ def viewOrders():
         """)
     ordersMade = json.loads(ordersMade)
     for i in range(0, len(ordersMade)):
-        print(str(i+1) + ") " + str(ordersMade[i]))
+        print(str(i+1) + ") " + str([item for item in ordersMade[i] if item]))
 
 
 if __name__ == '__main__':

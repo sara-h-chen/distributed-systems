@@ -126,35 +126,14 @@ def placeOrder(usernameIndex, clientsock, addr, registeredUsers):
 
 def openShop(usernameIndex, clientsock, addr, registeredUsers):
     clientsock.sendto(bytes("SHOP", "utf-8"), addr)
-    print("Opening SHOP")
-    clientsock.sendto(bytes("""
-    ────────▄███████████▄────────
-    ─────▄███▓▓▓▓▓▓▓▓▓▓▓███▄─────
-    ────███▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓███────  WELCOME TO THE SHOP
-    ───██▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓██───  What would you like to purchase?
-    ──██▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓██──  1) Pokeball
-    ─██▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓██─  2) Ultraball
-    ██▓▓▓▓▓▓▓▓▓███████▓▓▓▓▓▓▓▓▓██  3) Masterball
-    ██▓▓▓▓▓▓▓▓██░░░░░██▓▓▓▓▓▓▓▓██  4) Potion
-    ██▓▓▓▓▓▓▓██░░███░░██▓▓▓▓▓▓▓██  5) Super Potion
-    ███████████░░███░░███████████  6) Incense
-    ██░░░░░░░██░░███░░██░░░░░░░██  7) Egg Incubator
-    ██░░░░░░░░██░░░░░██░░░░░░░░██  8) Razz Berry
-    ██░░░░░░░░░███████░░░░░░░░░██  9) Revive
-    ─██░░░░░░░░░░░░░░░░░░░░░░░██─  10) Max Revive
-    ──██░░░░░░░░░░░░░░░░░░░░░██──
-    ───██░░░░░░░░░░░░░░░░░░░██───
-    ────███░░░░░░░░░░░░░░░███────
-    ─────▀███░░░░░░░░░░░███▀─────
-    ────────▀███████████▀────────
-    """, "utf-8"), addr)
+    print("Opening SHOP on " + str(addr))
     placeOrder(usernameIndex, clientsock, addr, registeredUsers)
     clientsock.sendto(bytes("Purchases logged", "utf-8"), addr)
 
 
 def viewOrders(usernameIndex, clientsock, addr, registeredUsers):
     clientsock.sendto(bytes("ORDERS", "utf-8"), addr)
-    print("Opening ORDERS")
+    print("Opening ORDERS on " + str(addr))
     serialized = json.dumps(registeredUsers.userList[usernameIndex].orderHistory)
     clientsock.sendto(bytes(serialized, "utf-8"), addr)
 
