@@ -6,9 +6,6 @@
 import json
 import socket, _thread
 from select import select
-# from random import randint
-# import struct
-# import sys
 
 class RegisteredUsers:
     userList = []
@@ -138,6 +135,17 @@ def viewOrders(usernameIndex, clientsock, addr, registeredUsers):
     clientsock.sendto(bytes(serialized, "utf-8"), addr)
 
 
+def cancelOrder(usernameIndex, clientsock, addr, registeredUsers):
+    clientsock.sendto(bytes("CANCEL", "utf-8"), addr)
+    print("Begin CANCEL sequence on " + str(addr))
+    serialized = json.dumps(registeredUsers.userList[usernameIndex].orderHistory)
+    clientsock.sendto(bytes(serialized, "utf-8"), addr)
+    orderToCancel = bytes.decode(clientsock.recv(1024), "utf-8")
+    registeredUsers.userList[usernameIndex].cancelOrder(int(orderToCancel))
+    print("Deleted item " + str(int(orderToCancel) + 1))
+    clientsock.sendto(bytes("Item deleted", "utf-8"), addr)
+
+
 #####################################################################
 #                    SOCKET-SPECIFIC FUNCTIONS                      #
 #####################################################################
@@ -154,7 +162,7 @@ def read_tcp(serverSocket, registeredUsers):
 
 
 def handler(clientsock, addr, registeredUsers):
-    data = clientsock.recv(1024)
+    data = clientsock.recv(4096)
     if data:
         username = data.decode("utf-8")
         userExists = False
@@ -167,7 +175,7 @@ def handler(clientsock, addr, registeredUsers):
             clientsock.sendto(bytes("True", "utf-8"), addr)
         clientsock.sendto(bytes(startGreeting(), "utf-8"), addr)
         while True:
-            data = clientsock.recv(1024)
+            data = clientsock.recv(4096)
             if data:
                 usernameIndex = getUsernameIndex(username, registeredUsers)
                 command = bytes.decode(data, "utf-8")
@@ -175,11 +183,14 @@ def handler(clientsock, addr, registeredUsers):
                     openShop(usernameIndex, clientsock, addr, registeredUsers)
                 elif command == "2":
                     viewOrders(usernameIndex, clientsock, addr, registeredUsers)
+                elif command == "3":
+                    cancelOrder(usernameIndex, clientsock, addr, registeredUsers)
             if not (data):
                 break
     clientsock.close()
 
 
+# Creates new sockets for every thread that connects to the server
 def createSocket(registeredUsers):
     serverPort = 12500
     serverAddress = ('', 10000)
@@ -205,6 +216,11 @@ def createSocket(registeredUsers):
                 read_udp(s)
             else:
                 print("Error: Unknown socket type ", s)
+
+
+############################################################
+#                      MAIN METHOD                         #
+############################################################
 
 if __name__ == '__main__':
     registeredUsers = RegisteredUsers()
