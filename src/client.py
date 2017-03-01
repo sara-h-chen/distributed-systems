@@ -47,13 +47,15 @@ def connectToServer():
                     viewOrders()
                 elif packet == "CANCEL":
                     cancelOrder()
+                elif packet == "TOO MANY":
+                    print("Unable to make purchases; you made more purchases than allowed!")
+                    mainMenu()
                 else:
                     mainMenu()
             if not packet:
                 print("Exiting...")
                 break
-    # TODO: What happens when you're not authenticated?
-    # else:
+
 
 ##########################################################
 #                        ACTIONS                         #

@@ -2,10 +2,9 @@
 #  DISTRIBUTED SYSTEMS SUMMATIVE: SERVER PROGRAM                              #
 #  The system implements passive replication                                  #
 ###############################################################################
-#  THE SERVER IS PUT TO SLEEP AFTER EVERY PACKET IS SENT TO OVERCOME THE
-#  PROBLEM CAUSED BY THE IN-BUILT OPTIMIZATION ALGORITHM WHICH TRIES TO
-#  SQUEEZE AS MANY MESSAGES AS POSSIBLE INTO A SINGLE PACKET.
-#
+#  THE SERVER IS PUT TO SLEEP AFTER EVERY PACKET IS SENT TO OVERCOME THE      #
+#  PROBLEM CAUSED BY THE IN-BUILT OPTIMIZATION ALGORITHM WHICH TRIES TO       #
+#  SQUEEZE AS MANY MESSAGES AS POSSIBLE INTO A SINGLE PACKET.                 #
 ###############################################################################
 
 import json
@@ -46,6 +45,7 @@ class User:
 #                  GAME-SPECIFIC FUNCTIONS                     #
 ################################################################
 
+# Refer to comment at top in client server re: graphics on server-side
 def startGreeting():
     return ("""
                          ."-,.__
@@ -115,34 +115,40 @@ def getUsernameIndex(username, registeredUsers):
         if registeredUsers.userList[i].username == username:
             return i
 
+
+def openShop(usernameIndex, clientsock, addr, registeredUsers):
+    clientsock.sendto(bytes("SHOP", "utf-8"), addr)
+    time.sleep(0.5)
+    print("Opening SHOP on " + str(addr))
+    if placeOrder(usernameIndex, clientsock, addr, registeredUsers):
+        clientsock.sendto(bytes("Purchases logged\n", "utf-8"), addr)
+        time.sleep(0.5)
+
+
 def placeOrder(usernameIndex, clientsock, addr, registeredUsers):
     orderReceived = bytes.decode(clientsock.recv(1024), "utf-8")
     orderReceived = [x.strip() for x in orderReceived.split(',')]
+    # Ensures not more than 3 items are purchased at a time
     if len(orderReceived) > 3:
-        clientsock.sendto(bytes("Unable to make purchases; you made more purchases than allowed!"))
+        clientsock.sendto(bytes("TOO MANY", "utf-8"), addr)
+        # Refer to comment at top on 'sleep'
         time.sleep(0.5)
+        return False
     listOfOrders = ["Pokeball", "Ultraball", "Masterball", "Potion", "Super Potion", "Incense", "Egg Incubator", "Razz Berry", "Revive", "Max Revive"]
     orderArray = ["","",""]
     for i in range(0, len(orderReceived)):
         # Gets the String value of the items listed above
         orderArray[i] = listOfOrders[int(orderReceived[i]) - 1]
     registeredUsers.userList[usernameIndex].placeOrder(orderArray)
-    print(registeredUsers.userList[usernameIndex])
-
-
-def openShop(usernameIndex, clientsock, addr, registeredUsers):
-    clientsock.sendto(bytes("SHOP", "utf-8"), addr)
-    time.sleep(0.5)
-    print("Opening SHOP on " + str(addr))
-    placeOrder(usernameIndex, clientsock, addr, registeredUsers)
-    clientsock.sendto(bytes("Purchases logged\n", "utf-8"), addr)
-    time.sleep(0.5)
+    # print(registeredUsers.userList[usernameIndex])
+    return True
 
 
 def viewOrders(usernameIndex, clientsock, addr, registeredUsers):
     clientsock.sendto(bytes("ORDERS", "utf-8"), addr)
     time.sleep(0.5)
     print("Opening ORDERS on " + str(addr))
+    # Serialize list of orders stored
     serialized = json.dumps(registeredUsers.userList[usernameIndex].orderHistory)
     clientsock.sendto(bytes(serialized, "utf-8"), addr)
     time.sleep(0.5)
@@ -155,8 +161,10 @@ def cancelOrder(usernameIndex, clientsock, addr, registeredUsers):
     serialized = json.dumps(registeredUsers.userList[usernameIndex].orderHistory)
     clientsock.sendto(bytes(serialized, "utf-8"), addr)
     orderToCancel = bytes.decode(clientsock.recv(1024), "utf-8")
+    # Delete stored order
     registeredUsers.userList[usernameIndex].cancelOrder(int(orderToCancel))
     print("Deleted item " + str(int(orderToCancel) + 1))
+    # Send feedback to client
     clientsock.sendto(bytes("Item deleted\n", "utf-8"), addr)
     time.sleep(0.5)
 
