@@ -85,7 +85,7 @@ def mainMenu():
     2) View order history
 
     Choose by entering the Option number
-    E.g. If I want to open the shop, I would type: 2
+    E.g. If I want to view my order history, I would type: 2
     """)
     serverSocket.send(bytes(menuChoice, "utf-8"))
 

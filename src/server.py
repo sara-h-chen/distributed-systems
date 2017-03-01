@@ -1,11 +1,19 @@
 ###############################################################################
-# DISTRIBUTED SYSTEMS SUMMATIVE: SERVER PROGRAM                               #
-# The system implements passive replication                                   #
+#  DISTRIBUTED SYSTEMS SUMMATIVE: SERVER PROGRAM                              #
+#  The system implements passive replication                                  #
 ###############################################################################
-# TODO: Refactor headers
+#  THE SERVER IS PUT TO SLEEP AFTER EVERY PACKET IS SENT TO OVERCOME THE
+#  PROBLEM CAUSED BY THE IN-BUILT OPTIMIZATION ALGORITHM WHICH TRIES TO
+#  SQUEEZE AS MANY MESSAGES AS POSSIBLE INTO A SINGLE PACKET.
+#
+###############################################################################
+
 import json
 import socket, _thread
 from select import select
+
+import time
+
 
 class RegisteredUsers:
     userList = []
@@ -112,6 +120,7 @@ def placeOrder(usernameIndex, clientsock, addr, registeredUsers):
     orderReceived = [x.strip() for x in orderReceived.split(',')]
     if len(orderReceived) > 3:
         clientsock.sendto(bytes("Unable to make purchases; you made more purchases than allowed!"))
+        time.sleep(0.5)
     listOfOrders = ["Pokeball", "Ultraball", "Masterball", "Potion", "Super Potion", "Incense", "Egg Incubator", "Razz Berry", "Revive", "Max Revive"]
     orderArray = ["","",""]
     for i in range(0, len(orderReceived)):
@@ -123,27 +132,33 @@ def placeOrder(usernameIndex, clientsock, addr, registeredUsers):
 
 def openShop(usernameIndex, clientsock, addr, registeredUsers):
     clientsock.sendto(bytes("SHOP", "utf-8"), addr)
+    time.sleep(0.5)
     print("Opening SHOP on " + str(addr))
     placeOrder(usernameIndex, clientsock, addr, registeredUsers)
-    clientsock.sendto(bytes("Purchases logged", "utf-8"), addr)
+    clientsock.sendto(bytes("Purchases logged\n", "utf-8"), addr)
+    time.sleep(0.5)
 
 
 def viewOrders(usernameIndex, clientsock, addr, registeredUsers):
     clientsock.sendto(bytes("ORDERS", "utf-8"), addr)
+    time.sleep(0.5)
     print("Opening ORDERS on " + str(addr))
     serialized = json.dumps(registeredUsers.userList[usernameIndex].orderHistory)
     clientsock.sendto(bytes(serialized, "utf-8"), addr)
+    time.sleep(0.5)
 
 
 def cancelOrder(usernameIndex, clientsock, addr, registeredUsers):
     clientsock.sendto(bytes("CANCEL", "utf-8"), addr)
+    time.sleep(0.5)
     print("Begin CANCEL sequence on " + str(addr))
     serialized = json.dumps(registeredUsers.userList[usernameIndex].orderHistory)
     clientsock.sendto(bytes(serialized, "utf-8"), addr)
     orderToCancel = bytes.decode(clientsock.recv(1024), "utf-8")
     registeredUsers.userList[usernameIndex].cancelOrder(int(orderToCancel))
     print("Deleted item " + str(int(orderToCancel) + 1))
-    clientsock.sendto(bytes("Item deleted", "utf-8"), addr)
+    clientsock.sendto(bytes("Item deleted\n", "utf-8"), addr)
+    time.sleep(0.5)
 
 
 #####################################################################
@@ -173,6 +188,7 @@ def handler(clientsock, addr, registeredUsers):
         if not userExists:
             createUser(username, clientsock, addr, registeredUsers)
             clientsock.sendto(bytes("True", "utf-8"), addr)
+            time.sleep(0.5)
         clientsock.sendto(bytes(startGreeting(), "utf-8"), addr)
         while True:
             data = clientsock.recv(4096)
