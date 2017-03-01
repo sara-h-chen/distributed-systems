@@ -3,12 +3,12 @@
 # The system implements passive replication                                   #
 ###############################################################################
 # TODO: Refactor headers
+import json
 import socket, _thread
 from select import select
 # from random import randint
 # import struct
 # import sys
-
 
 class RegisteredUsers:
     userList = []
@@ -30,8 +30,8 @@ class User:
         self.password = password
         self.orderHistory = []
 
-    def placeOrder(self, threeTuple):
-        self.orderHistory.append(threeTuple)
+    def placeOrder(self, orderArray):
+        self.orderHistory.append(orderArray)
 
     def cancelOrder(self, index):
         del self.orderHistory[index]
@@ -115,38 +115,48 @@ def placeOrder(usernameIndex, clientsock, addr, registeredUsers):
     orderReceived = [x.strip() for x in orderReceived.split(',')]
     if len(orderReceived) > 3:
         clientsock.sendto(bytes("Unable to make purchases; you made more purchases than allowed!"))
-    orderReceived = tuple(orderReceived)
-    registeredUsers.userList[usernameIndex].placeOrder(orderReceived)
+    listOfOrders = ["Pokeball", "Ultraball", "Masterball", "Potion", "Super Potion", "Incense", "Egg Incubator", "Razz Berry", "Revive", "Max Revive"]
+    orderArray = ["","",""]
+    for i in range(0, len(orderReceived)):
+        # Gets the String value of the items listed above
+        orderArray[i] = listOfOrders[int(orderReceived[i]) - 1]
+    registeredUsers.userList[usernameIndex].placeOrder(orderArray)
     print(registeredUsers.userList[usernameIndex])
 
 
-def beginGame(usernameIndex, clientsock, addr, registeredUsers):
+def openShop(usernameIndex, clientsock, addr, registeredUsers):
     clientsock.sendto(bytes("SHOP", "utf-8"), addr)
     print("Opening SHOP")
     clientsock.sendto(bytes("""
-────────▄███████████▄────────
-─────▄███▓▓▓▓▓▓▓▓▓▓▓███▄─────
-────███▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓███────  WELCOME TO THE SHOP
-───██▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓██───  What would you like to purchase?
-──██▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓██──  1) Pokeball
-─██▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓██─  2) Ultraball
-██▓▓▓▓▓▓▓▓▓███████▓▓▓▓▓▓▓▓▓██  3) Masterball
-██▓▓▓▓▓▓▓▓██░░░░░██▓▓▓▓▓▓▓▓██  4) Potion
-██▓▓▓▓▓▓▓██░░███░░██▓▓▓▓▓▓▓██  5) Super Potion
-███████████░░███░░███████████  6) Incense
-██░░░░░░░██░░███░░██░░░░░░░██  7) Egg Incubator
-██░░░░░░░░██░░░░░██░░░░░░░░██  8) Razz Berry
-██░░░░░░░░░███████░░░░░░░░░██  9) Revive
-─██░░░░░░░░░░░░░░░░░░░░░░░██─  10) Max Revive
-──██░░░░░░░░░░░░░░░░░░░░░██──
-───██░░░░░░░░░░░░░░░░░░░██───
-────███░░░░░░░░░░░░░░░███────
-─────▀███░░░░░░░░░░░███▀─────
-────────▀███████████▀────────
-""", "utf-8"), addr)
+    ────────▄███████████▄────────
+    ─────▄███▓▓▓▓▓▓▓▓▓▓▓███▄─────
+    ────███▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓███────  WELCOME TO THE SHOP
+    ───██▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓██───  What would you like to purchase?
+    ──██▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓██──  1) Pokeball
+    ─██▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓██─  2) Ultraball
+    ██▓▓▓▓▓▓▓▓▓███████▓▓▓▓▓▓▓▓▓██  3) Masterball
+    ██▓▓▓▓▓▓▓▓██░░░░░██▓▓▓▓▓▓▓▓██  4) Potion
+    ██▓▓▓▓▓▓▓██░░███░░██▓▓▓▓▓▓▓██  5) Super Potion
+    ███████████░░███░░███████████  6) Incense
+    ██░░░░░░░██░░███░░██░░░░░░░██  7) Egg Incubator
+    ██░░░░░░░░██░░░░░██░░░░░░░░██  8) Razz Berry
+    ██░░░░░░░░░███████░░░░░░░░░██  9) Revive
+    ─██░░░░░░░░░░░░░░░░░░░░░░░██─  10) Max Revive
+    ──██░░░░░░░░░░░░░░░░░░░░░██──
+    ───██░░░░░░░░░░░░░░░░░░░██───
+    ────███░░░░░░░░░░░░░░░███────
+    ─────▀███░░░░░░░░░░░███▀─────
+    ────────▀███████████▀────────
+    """, "utf-8"), addr)
     placeOrder(usernameIndex, clientsock, addr, registeredUsers)
     clientsock.sendto(bytes("Purchases logged", "utf-8"), addr)
 
+
+def viewOrders(usernameIndex, clientsock, addr, registeredUsers):
+    clientsock.sendto(bytes("ORDERS", "utf-8"), addr)
+    print("Opening ORDERS")
+    serialized = json.dumps(registeredUsers.userList[usernameIndex].orderHistory)
+    clientsock.sendto(bytes(serialized, "utf-8"), addr)
 
 
 #####################################################################
@@ -176,13 +186,18 @@ def handler(clientsock, addr, registeredUsers):
         if not userExists:
             createUser(username, clientsock, addr, registeredUsers)
             clientsock.sendto(bytes("True", "utf-8"), addr)
-        usernameIndex = getUsernameIndex(username, registeredUsers)
         clientsock.sendto(bytes(startGreeting(), "utf-8"), addr)
-        beginGame(usernameIndex, clientsock, addr, registeredUsers)
-    while True:
-        data = clientsock.recv(1024)
-        if not (data):
-            break
+        while True:
+            data = clientsock.recv(1024)
+            if data:
+                usernameIndex = getUsernameIndex(username, registeredUsers)
+                command = bytes.decode(data, "utf-8")
+                if command == "1":
+                    openShop(usernameIndex, clientsock, addr, registeredUsers)
+                elif command == "2":
+                    viewOrders(usernameIndex, clientsock, addr, registeredUsers)
+            if not (data):
+                break
     clientsock.close()
 
 
@@ -193,6 +208,7 @@ def createSocket(registeredUsers):
     tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp.bind(('', serverPort))
     tcp.listen(1)
+    print("Listening on Port " + str(serverPort))
 
     # Create socket for UDP; you can ignore this!
     udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

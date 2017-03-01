@@ -4,8 +4,8 @@
 #  (2), cancel an order                                                             #
 #####################################################################################
 # TODO: Refactor headers
+import json
 import socket
-
 
 serverName = ''
 serverPort = 12500
@@ -30,13 +30,23 @@ def connectToServer():
         # After authentication
         welcome = serverSocket.recv(4096)
         print(bytes.decode(welcome, "utf-8"))
+        menuChoice = input(mainMenu())
+        serverSocket.send(bytes(menuChoice, "utf-8"))
         while True:
             packet = bytes.decode(serverSocket.recv(1024), "utf-8")
             if packet:
                 print("                            " + packet)
                 if packet == "SHOP":
                     openShop()
-            if not packet: break
+                elif packet == "ORDERS":
+                    # TODO: Function to check order history
+                    viewOrders()
+                else:
+                    menuChoice = input(mainMenu())
+                    serverSocket.send(bytes(menuChoice, "utf-8"))
+            if not packet:
+                print("Exiting...")
+                break
 
 
     # TODO: What happens when you're not authenticated?
@@ -70,6 +80,40 @@ def mainGreeting():
 
                          Please enter your username:
      """).format()
+
+
+def mainMenu():
+    return (("""
+    What would you like to do?
+    1) Browse the item shop
+    2) View order history
+    3) Exit
+
+    Choose by entering the Option number
+    E.g. If I want to quit, I would type: 3
+    """)).format()
+
+
+def viewOrders():
+    ordersMade = bytes.decode(serverSocket.recv(4096), "utf-8")
+    print("""
+               .-. \_/ .-.
+               \.-\/=\/.-/
+            '-./___|=|___\.-'
+           .--| \|/`"`\|/ |--.
+          (((_)\  .---.  /(_)))
+           `\ \_`-.   .-'_/ /`_     YOUR ORDERS:
+             '.__       __.'(_))
+                 /     \     //
+                |       |__.'/
+                \       /--'`
+            .--,-' .--. '----.
+           '----`--'  '--`----'
+
+        """)
+    ordersMade = json.loads(ordersMade)
+    for i in range(0, len(ordersMade)):
+        print(str(i+1) + ") " + str(ordersMade[i]))
 
 
 if __name__ == '__main__':
