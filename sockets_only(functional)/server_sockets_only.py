@@ -1,5 +1,5 @@
 ###############################################################################
-#  DISTRIBUTED SYSTEMS SUMMATIVE: SERVER PROGRAM                              #
+#  Distributed Systems Summative: Server Program                              #
 #  The system implements passive replication                                  #
 ###############################################################################
 #  THE SERVER IS PUT TO SLEEP AFTER EVERY PACKET IS SENT TO OVERCOME THE      #
@@ -7,6 +7,7 @@
 #  SQUEEZE AS MANY MESSAGES AS POSSIBLE INTO A SINGLE PACKET.                 #
 ###############################################################################
 
+import Pyro4
 import json
 import socket, _thread
 from select import select

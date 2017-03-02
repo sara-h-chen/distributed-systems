@@ -1,12 +1,12 @@
 #####################################################################################
-#  Distributed Systems Summative: The client Python program which does the          #
+#  Distributed Systems Summative: The Client Python program, which does the         #
 #  following: allow the user to place an order (1), retrieve his/her order history  #
 #  (2), cancel an order (3)                                                         #
 #####################################################################################
 #  TO REDUCE THE LOAD ON THE SERVER AS WELL AS BANDWIDTH CONSUMPTION, ALL           #
 #  PROCESSING IS CARRIED OUT ON THE CLIENT-SIDE, I.E. ASCII ART IS CONTAINED WITHIN #
 #  THE CLIENT PROGRAM (with the exception of the first graphic, which was entirely  #
-#  to observe how large packets are transmitted).
+#  to observe how large packets are transmitted).                                   #
 #####################################################################################
 
 import json
