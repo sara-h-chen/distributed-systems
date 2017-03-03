@@ -7,7 +7,6 @@
 #  SQUEEZE AS MANY MESSAGES AS POSSIBLE INTO A SINGLE PACKET.                 #
 ###############################################################################
 
-import Pyro4
 import json
 import socket, _thread
 from select import select
