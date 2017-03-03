@@ -5,6 +5,19 @@
 #
 #########################################################################
 
+import sys
+import socket
+from threading import Thread
+
+import Pyro4.util
+
+sys.excepthook = Pyro4.util.excepthook
+
+
+###############################################################
+#           CLASSES USED TO STORE DATA WITHIN SERVER          #
+###############################################################
+
 class RegisteredUsers(object):
     userList = []
 
@@ -32,6 +45,11 @@ class User(object):
         del self.orderHistory[index]
 
 
+##############################################################
+#                      MAIN SERVER CLASS                     #
+##############################################################
+
+@Pyro4.expose
 class Server(object):
     registeredUsers = []
 
@@ -85,7 +103,6 @@ class Server(object):
         self.registeredUsers.userList[usernameIndex].placeOrder(orderArray)
         print("""
                     Purchases logged\n""")
-        # print(registeredUsers.userList[usernameIndex])
 
     def viewOrders(self, usernameIndex):
         return self.registeredUsers.userList[usernameIndex].orderHistory
@@ -97,3 +114,20 @@ class Server(object):
         # Send feedback to client
         print("\n\n                            Item deleted!")
 
+
+############################################################
+#                      MAIN METHOD                         #
+############################################################
+
+if __name__ == '__main__':
+    server = Server()
+    daemon = Pyro4.Daemon()
+
+    uri_daemon, ns, br = Pyro4.naming.startNSloop()
+    uri = daemon.register(server)
+
+    ns.nameserver.register("pyro.server", uri)
+
+    daemon.requestLoop()
+
+    print("Daemon started")

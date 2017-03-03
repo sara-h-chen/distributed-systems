@@ -2,7 +2,7 @@
 #
 ######################################################################
 
-from server_pyro import *
+import socket
 
 
 class Client(object):
@@ -181,6 +181,10 @@ If I want to purchase a Pokeball, a Potion, and a Razz Berry, I place the order 
 Your turn! Choose up to a max of 3 items to purchase: """).format())
     return choice
 
+
+#########################################################
+#                     MAIN METHOD                       #
+#########################################################
 
 if __name__ == '__main__':
     # Set up server
