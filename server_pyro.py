@@ -1,14 +1,12 @@
-#########################################################################
-#  Distributed Systems Summative: Server side script, works with Pyro
-#
-#########################################################################
-#
-#########################################################################
+###########################################################################
+#  Distributed Systems Summative: Server side script, works with Pyro4    #
+#  Stores user information, including usernames, passwords and orders     #
+###########################################################################
+#  WARNING: THE FRONT-END PROGRAM NEEDS TO BE STARTED FIRST, FOLLOWED BY  #
+#  THE SERVER, THEN THE CLIENT PROGRAM                                    #
+###########################################################################
 
 import sys
-import socket
-from threading import Thread
-
 import Pyro4.util
 
 sys.excepthook = Pyro4.util.excepthook
@@ -18,6 +16,7 @@ sys.excepthook = Pyro4.util.excepthook
 #           CLASSES USED TO STORE DATA WITHIN SERVER          #
 ###############################################################
 
+@Pyro4.expose
 class RegisteredUsers(object):
     userList = []
 
@@ -28,6 +27,7 @@ class RegisteredUsers(object):
         self.userList.append(user)
 
 
+@Pyro4.expose
 class User(object):
     username = ""
     password = ""
@@ -44,6 +44,9 @@ class User(object):
     def cancelOrder(self, index):
         del self.orderHistory[index]
 
+    def getOrderHistory(self):
+        return self.orderHistory
+
 
 ##############################################################
 #                      MAIN SERVER CLASS                     #
@@ -56,32 +59,15 @@ class Server(object):
     def __init__(self):
         self.registeredUsers = RegisteredUsers()
 
-    def login(self, username):
-        currentUser = None
-        userExists = False
-        for user in self.registeredUsers.userList:
-            if user.username == username:
-                currentUser = self.authenticate(user)
-                userExists = True
-        if not userExists:
-            currentUser = self.createUser(username)
-        return currentUser
+    def authenticate(self, usernameIndex, passwordGiven):
+        if passwordGiven == self.registeredUsers.userList[usernameIndex].password:
+            return True
+        else:
+            return False
 
-    def authenticate(self, user):
-        authenticated = False
-        while not authenticated:
-            passwordGiven = input("Please enter your password here: ")
-            if passwordGiven == user.password:
-                authenticated = True
-                return user
-
-    def createUser(self, username):
-        print("We did not recognize your username, so we created one for you!")
-        passwordGiven = input("Please enter your password here: ")
-        ''.join(e for e in passwordGiven if e.isalnum())
+    def createUser(self, username, passwordGiven):
         currentUser = User(username, passwordGiven)
         self.registeredUsers.addUser(currentUser)
-        return currentUser
 
     def getUsernameIndex(self, username):
         for i in range(0, len(self.registeredUsers.userList)):
@@ -92,7 +78,6 @@ class Server(object):
         orderReceived = [x.strip() for x in orderReceived.split(',')]
         # Ensures not more than 3 items are purchased at a time
         if len(orderReceived) > 3:
-            print("\n\nUnable to make purchases; you made more purchases than allowed!")
             return False
         listOfOrders = ["Pokeball", "Ultraball", "Masterball", "Potion", "Super Potion", "Incense", "Egg Incubator",
                         "Razz Berry", "Revive", "Max Revive"]
@@ -101,33 +86,32 @@ class Server(object):
             # Gets the String value of the items listed above
             orderArray[i] = listOfOrders[int(orderReceived[i]) - 1]
         self.registeredUsers.userList[usernameIndex].placeOrder(orderArray)
-        print("""
-                    Purchases logged\n""")
+        return True
 
     def viewOrders(self, usernameIndex):
-        return self.registeredUsers.userList[usernameIndex].orderHistory
+        return self.registeredUsers.userList[usernameIndex].getOrderHistory()
 
     def cancelOrder(self, usernameIndex, orderToCancel):
         # Delete stored order
         self.registeredUsers.userList[usernameIndex].cancelOrder(int(orderToCancel))
         print("Deleted item " + str(int(orderToCancel) + 1))
-        # Send feedback to client
-        print("\n\n                            Item deleted!")
+        return True
 
+    @property
+    def getAllRegisteredUsers(self):
+        return self.registeredUsers.userList
 
 ############################################################
 #                      MAIN METHOD                         #
 ############################################################
 
 if __name__ == '__main__':
+    # Creates a Server instance
     server = Server()
+    nameserv = Pyro4.locateNS()
     daemon = Pyro4.Daemon()
-
-    uri_daemon, ns, br = Pyro4.naming.startNSloop()
+    # Binds the Server instance to the NameServer
     uri = daemon.register(server)
-
-    ns.nameserver.register("pyro.server", uri)
-
+    nameserv.register("pyro.server", uri)
+    print("Server is now ready")
     daemon.requestLoop()
-
-    print("Daemon started")

@@ -1,21 +1,32 @@
-######################################################################
-#
-######################################################################
-
+#########################################################################
+#  Distributed Systems Summative: Client side script, works with Pyro4  #
+#  Allows the user to place an order (1), retrieve their order history  #
+#  (2), and cancel their orders (3)                                     #
+#########################################################################
+#  WARNING: THE FRONT-END PROGRAM NEEDS TO BE STARTED FIRST, FOLLOWED   #
+#  BY THE SERVER, THEN THE CLIENT PROGRAM                               #
+#########################################################################
+import json
 import socket
 
+##########################################################
+#       CLASS TO MAINTAIN STATE OF CURRENT SESSION       #
+##########################################################
 
 class Client(object):
     currentUser = None
-    server = None
+    serverSocket = None
 
-    def __init__(self, usernameIndex, server):
+    def __init__(self, usernameIndex, serverSocket):
         self.currentUser = usernameIndex
-        self.server = server
+        self.serverSocket = serverSocket
 
     def viewOrders(self):
-        ordersMade = self.server.viewOrders(self.currentUser)
+        ordersMade = bytes.decode(self.serverSocket.recv(2048), "utf-8")
+        ordersMade = json.loads(ordersMade)
         print("""
+                            ORDERS
+
                    .-. \_/ .-.
                    \.-\/=\/.-/
                 '-./___|=|___\.-'
@@ -48,25 +59,73 @@ class Client(object):
             self.action(mainMenu())
 
     def cancelOrder(self):
-        print("\n\nPlease ensure you pick the right option. Here are your orders listed again: ")
-        ordersMade = self.server.viewOrders(self.currentUser)
+        self.serverSocket.send(bytes("3", "utf-8"))
+        print("""
+                                  CANCEL
+
+Please ensure you pick the right option. Here are your orders listed again: """)
+        ordersMade = bytes.decode(self.serverSocket.recv(1024), "utf-8")
+        ordersMade = json.loads(ordersMade)
         for i in range(0, len(ordersMade)):
             print(str(i + 1) + ") " + str([item for item in ordersMade[i] if item]))
         orderToCancel = input("Which order would you like to cancel? ".format())
-        self.server.cancelOrder(self.currentUser, (int(orderToCancel) - 1))
+        self.serverSocket.send(bytes(str(int(orderToCancel) - 1), "utf-8"))
+        if bytes.decode(self.serverSocket.recv(1024), "utf-8") == "True":
+            print("\n                           Order cancelled!")
+            return True
 
     def action(self, command):
+        # Sends command to Front-End
+        self.serverSocket.send(bytes(command, "utf-8"))
         command = int(command)
         if command == 1:
-            # Gets the LIST from Input
             shopChoice = openShop()
-            self.server.placeOrder(shopChoice, self.currentUser)
+            self.serverSocket.send(bytes(shopChoice, "utf-8"))
+            conf = bytes.decode(self.serverSocket.recv(1024), "utf-8")
+            if conf == "True":
+                print("""
+                                             Purchases logged\n""")
+            else:
+                print("\n\nUnable to make purchases; you made more purchases than allowed!")
         elif command == 2:
             self.viewOrders()
-        elif command == 3:
-            self.cancelOrder()
         else:
             return False
+
+
+################################################################
+#                 SOCKET-RELATED FUNCTIONS                     #
+################################################################
+
+def connectToFrontEnd():
+    serverName = ''
+    serverPort = 12500
+    serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    # Create TCP connection to frontend
+    serverSocket.connect((serverName, serverPort))
+    username = input(mainGreeting())
+    ''.join(e for e in username if e.isalnum())
+    # Sends username to frontend
+    serverSocket.send(bytes(username, "utf-8"))
+    loginPacket = bytes.decode(serverSocket.recv(1024), "utf-8")
+    if loginPacket == "nonauth":
+        while True:
+            passwordGiven = input("Please enter your password: ")
+            serverSocket.send(bytes(passwordGiven, "utf-8"))
+            if bytes.decode(serverSocket.recv(1024), "utf-8") == "auth":
+                break
+    if loginPacket == "create":
+        print("We did not recognize your username, so we created one for you!")
+        passwordGiven = input("Please enter your password here: ")
+        ''.join(e for e in passwordGiven if e.isalnum())
+        serverSocket.send(bytes(passwordGiven, "utf-8"))
+    usernameIndex = bytes.decode(serverSocket.recv(1024), "utf-8")
+    currentSession = Client(usernameIndex, serverSocket)
+    print(welcomeGreeting())
+    while True:
+        currentSession.action(mainMenu())
+
 
 ################################################################
 #                    ASCII-ART FUNCTIONS                       #
@@ -155,6 +214,8 @@ def mainMenu():
 
 def openShop():
     choice = input(("""
+                                SHOP
+
     ────────▄███████████▄────────
     ─────▄███▓▓▓▓▓▓▓▓▓▓▓███▄─────
     ────███▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓███────  WELCOME TO THE SHOP
@@ -187,15 +248,4 @@ Your turn! Choose up to a max of 3 items to purchase: """).format())
 #########################################################
 
 if __name__ == '__main__':
-    # Set up server
-    server = Server()
-    username = input(mainGreeting())
-    ''.join(e for e in username if e.isalnum())
-    # Authenticate
-    user = server.login(username)
-    currentUsernameIndex = server.getUsernameIndex(user.username)
-    # Create current session
-    client = Client(currentUsernameIndex, server)
-    print(welcomeGreeting())
-    while True:
-        client.action(mainMenu())
+    connectToFrontEnd()
