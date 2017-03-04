@@ -23,6 +23,10 @@ class RegisteredUsers(object):
     def __init__(self):
         self.userList = []
 
+    @property
+    def getUserList(self):
+        return self.userList
+
     def addUser(self, user):
         self.userList.append(user)
 
@@ -38,14 +42,23 @@ class User(object):
         self.password = password
         self.orderHistory = []
 
+    @property
+    def getOrderHistory(self):
+        return self.orderHistory
+
+    @property
+    def getPassword(self):
+        return self.password
+
+    @property
+    def getUsername(self):
+        return self.username
+
     def placeOrder(self, orderArray):
         self.orderHistory.append(orderArray)
 
     def cancelOrder(self, index):
         del self.orderHistory[index]
-
-    def getOrderHistory(self):
-        return self.orderHistory
 
 
 ##############################################################
@@ -59,19 +72,33 @@ class Server(object):
     def __init__(self):
         self.registeredUsers = RegisteredUsers()
 
+    @property
+    def getRegisteredUsers(self):
+        return self.registeredUsers
+
+    @property
+    def getAllRegisteredUsers(self):
+        return self.getRegisteredUsers.getUserList
+
+    def userExists(self, username):
+        for user in self.registeredUsers.getUserList:
+            if user.getUsername == username:
+                return True
+        return False
+
     def authenticate(self, usernameIndex, passwordGiven):
-        if passwordGiven == self.registeredUsers.userList[usernameIndex].password:
+        if passwordGiven == self.getRegisteredUsers.getUserList[usernameIndex].getPassword:
             return True
         else:
             return False
 
     def createUser(self, username, passwordGiven):
         currentUser = User(username, passwordGiven)
-        self.registeredUsers.addUser(currentUser)
+        self.getRegisteredUsers.addUser(currentUser)
 
     def getUsernameIndex(self, username):
-        for i in range(0, len(self.registeredUsers.userList)):
-            if self.registeredUsers.userList[i].username == username:
+        for i in range(0, len(self.getRegisteredUsers.userList)):
+            if self.getRegisteredUsers.getUserList[i].username == username:
                 return i
 
     def placeOrder(self, orderReceived, usernameIndex):
@@ -85,21 +112,20 @@ class Server(object):
         for i in range(0, len(orderReceived)):
             # Gets the String value of the items listed above
             orderArray[i] = listOfOrders[int(orderReceived[i]) - 1]
-        self.registeredUsers.userList[usernameIndex].placeOrder(orderArray)
+        self.getRegisteredUsers.getUserList[usernameIndex].placeOrder(orderArray)
         return True
 
     def viewOrders(self, usernameIndex):
-        return self.registeredUsers.userList[usernameIndex].getOrderHistory()
+        return self.getRegisteredUsers.getUserList[usernameIndex].getOrderHistory
 
     def cancelOrder(self, usernameIndex, orderToCancel):
         # Delete stored order
-        self.registeredUsers.userList[usernameIndex].cancelOrder(int(orderToCancel))
+        self.getRegisteredUsers.getUserList[usernameIndex].cancelOrder(int(orderToCancel))
         print("Deleted item " + str(int(orderToCancel) + 1))
         return True
 
-    @property
-    def getAllRegisteredUsers(self):
-        return self.registeredUsers.userList
+    def returnAllRegisteredUsers(self):
+        return self.getAllRegisteredUsers
 
 ############################################################
 #                      MAIN METHOD                         #

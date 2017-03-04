@@ -108,18 +108,20 @@ def connectToFrontEnd():
     ''.join(e for e in username if e.isalnum())
     # Sends username to frontend
     serverSocket.send(bytes(username, "utf-8"))
-    loginPacket = bytes.decode(serverSocket.recv(1024), "utf-8")
-    if loginPacket == "nonauth":
-        while True:
+    while True:
+        loginPacket = bytes.decode(serverSocket.recv(1024), "utf-8")
+        if loginPacket == "nonauth":
             passwordGiven = input("Please enter your password: ")
             serverSocket.send(bytes(passwordGiven, "utf-8"))
-            if bytes.decode(serverSocket.recv(1024), "utf-8") == "auth":
-                break
-    if loginPacket == "create":
-        print("We did not recognize your username, so we created one for you!")
-        passwordGiven = input("Please enter your password here: ")
-        ''.join(e for e in passwordGiven if e.isalnum())
-        serverSocket.send(bytes(passwordGiven, "utf-8"))
+        if loginPacket == "auth":
+            print("Welcome back!")
+            break
+        if loginPacket == "create":
+            print("We did not recognize your username, so we created one for you!")
+            passwordGiven = input("Please enter your password here: ")
+            ''.join(e for e in passwordGiven if e.isalnum())
+            serverSocket.send(bytes(passwordGiven, "utf-8"))
+            break
     usernameIndex = bytes.decode(serverSocket.recv(1024), "utf-8")
     currentSession = Client(usernameIndex, serverSocket)
     print(welcomeGreeting())

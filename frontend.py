@@ -36,16 +36,17 @@ def handler(clientsock, addr, server):
     if data:
         username = data.decode("utf-8")
         userExists = False
-        for user in server.getAllRegisteredUsers:
-            if user.username == username:
-                usernameIndex = server.getUsernameIndex(username)
-                authenticated = False
-                while not authenticated:
-                    clientsock.sendto(bytes("nonauth", "utf-8"), addr)
-                    passwordGiven = bytes.decode(clientsock.recv(1024), "utf-8")
-                    authenticated = server.authenticate(usernameIndex, passwordGiven)
-                clientsock.sendto(bytes("auth", "utf-8"), addr)
+        if server.userExists(username):
+            usernameIndex = server.getUsernameIndex(username)
+            authenticated = False
+            while not authenticated:
+                clientsock.sendto(bytes("nonauth", "utf-8"), addr)
+                passwordGiven = clientsock.recv(1024)
+                passwordGiven = bytes.decode(passwordGiven, "utf-8")
+                authenticated = server.authenticate(usernameIndex, passwordGiven)
+            clientsock.sendto(bytes("auth", "utf-8"), addr)
             userExists = True
+            clientsock.sendto(bytes(str(usernameIndex), "utf-8"), addr)
         if not userExists:
             clientsock.sendto(bytes("create", "utf-8"), addr)
             passwordGiven = bytes.decode(clientsock.recv(1024), "utf-8")
