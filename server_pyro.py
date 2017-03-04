@@ -1,6 +1,9 @@
 ###########################################################################
 #  Distributed Systems Summative: Server side script, works with Pyro4    #
 #  Stores user information, including usernames, passwords and orders     #
+#  The @property notation before a function allows it to behave like      #
+#  the dot-notation attributes since they have been disabled due to       #
+#  security concerns.
 ###########################################################################
 #  WARNING: THE FRONT-END PROGRAM NEEDS TO BE STARTED FIRST, FOLLOWED BY  #
 #  THE SERVER, THEN THE CLIENT PROGRAM                                    #
@@ -68,9 +71,11 @@ class User(object):
 @Pyro4.expose
 class Server(object):
     registeredUsers = []
+    primary = False
 
-    def __init__(self):
+    def __init__(self, isPrimary):
         self.registeredUsers = RegisteredUsers()
+        self.primary = isPrimary
 
     @property
     def getRegisteredUsers(self):
@@ -79,6 +84,10 @@ class Server(object):
     @property
     def getAllRegisteredUsers(self):
         return self.getRegisteredUsers.getUserList
+
+    @property
+    def isPrimary(self):
+        return self.primary
 
     def userExists(self, username):
         for user in self.registeredUsers.getUserList:
@@ -133,10 +142,10 @@ class Server(object):
 
 if __name__ == '__main__':
     # Creates a Server instance
-    server = Server()
+    server = Server(True)
     nameserv = Pyro4.locateNS()
     daemon = Pyro4.Daemon()
-    # Binds the Server instance to the NameServer
+    # Binds the Server instance to the nameserver
     uri = daemon.register(server)
     nameserv.register("pyro.server", uri)
     print("Server is now ready")

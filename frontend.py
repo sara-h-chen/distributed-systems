@@ -1,10 +1,11 @@
 ##########################################################################
 #  Distributed Systems Summative: Front-End Program, implemented
 #  using Pyro4
-##########################################################################
 #
-#  THE SCRIPT IS PUT TO SLEEP AFTER EVERY PACKET IS SENT DOWN THE SOCKET  #
-#  TO PREVENT THE NAGLE ALGORITHM FROM OPTIMIZING THE PACKETS.
+##########################################################################
+#  THIS SCRIPT SHOULD BE RUN FIRST, BEFORE THE SERVER AND CLIENT, AS IT
+#  IS USED TO BEGIN THE NAMESERVER.
+#
 ##########################################################################
 
 import sys
@@ -16,6 +17,21 @@ from select import select
 import Pyro4.util
 
 sys.excepthook = Pyro4.util.excepthook
+
+
+#####################################################################
+#             SESSION CLASS MAINTAINS REQUESTS NUMBERS              #
+#####################################################################
+
+class Session(object):
+    requestId = 0
+
+    def __init__(self):
+        self.requestId = 0
+
+    def nextRequest(self):
+        self.requestId += 1
+        return self.requestId
 
 #####################################################################
 #                    SOCKET-SPECIFIC FUNCTIONS                      #
@@ -32,6 +48,7 @@ def read_tcp(serverSocket, server):
 
 
 def handler(clientsock, addr, server):
+    session = Session()
     data = clientsock.recv(1024)
     if data:
         username = data.decode("utf-8")
@@ -54,7 +71,6 @@ def handler(clientsock, addr, server):
             usernameIndex = server.getUsernameIndex(username)
             clientsock.sendto(bytes(str(usernameIndex), "utf-8"), addr)
         usernameIndex = server.getUsernameIndex(username)
-        # print(usernameIndex)
         while True:
             command = clientsock.recv(1024)
             if command:
@@ -113,8 +129,9 @@ def createSocket(server):
 ##########################################################################
 
 if __name__ == '__main__':
+    # Spin off a new thread to run the nameserver
     _thread.start_new_thread(Pyro4.naming.startNSloop, ())
     server = Pyro4.Proxy("PYRONAME:pyro.server")
     createSocket(server)
 
-
+    # batch(proxy)

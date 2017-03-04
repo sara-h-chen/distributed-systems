@@ -9,9 +9,10 @@
 import json
 import socket
 
-##########################################################
-#       CLASS TO MAINTAIN STATE OF CURRENT SESSION       #
-##########################################################
+
+################################################################
+#            CLASS TO MAINTAIN STATE OF CURRENT SESSION        #
+################################################################
 
 class Client(object):
     currentUser = None
@@ -75,7 +76,7 @@ Please ensure you pick the right option. Here are your orders listed again: """)
             return True
 
     def action(self, command):
-        # Sends command to Front-End
+        # Sends command to frontend
         self.serverSocket.send(bytes(command, "utf-8"))
         command = int(command)
         if command == 1:
