@@ -203,18 +203,29 @@ if __name__ == '__main__':
 
     # Depending on type of server, change behavior
     if server.isPrimary:
-        daemon = Pyro4.Daemon()
-        # Binds the Server instance to the nameserver
-        uri = daemon.register(server)
-        nameserv.register("pyro.server", uri)
-        print("Server is now ready")
-        daemon.requestLoop()
+        with Pyro4.Daemon() as daemon:
+            # Binds the Server instance to the nameserver
+            uri = daemon.register(server)
+            nameserv.register("pyro.server", uri)
+            print("Server is now ready")
+            daemon.requestLoop()
     else:
-        primary = Pyro4.Proxy("PYRONAME:pyro.server")
-        while True:
-            try:
-                newState = primary.getNewState()
-                server.setNewState(newState)
-                time.sleep(30)
-            except:
-
+        with Pyro4.Proxy("PYRONAME:pyro.server") as primary:
+            while True:
+                try:
+                    newState = primary.getNewState()
+                    server.setNewState(newState)
+                    time.sleep(30)
+                except Exception:
+                    checkConnection = nameserv.lookup("pyro.server")
+                    if checkConnection == uri:
+                        nameserv.remove("pyro.server")
+                        print("Connection lost! Taking over as primary... ")
+                        server.primary = True
+                        daemon = Pyro4.Daemon()
+                        uri = daemon.register(server)
+                        nameserv.register("pyro.server", uri)
+                        print("Backup has taken over")
+                        daemon.requestLoop()
+                    primary = Pyro4.Proxy("PYRONAME:pyro.server")
+                    continue
