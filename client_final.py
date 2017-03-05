@@ -4,7 +4,7 @@
 #  (2), and cancel their orders (3)                                     #
 #########################################################################
 #  WARNING: THE FRONT-END PROGRAM NEEDS TO BE STARTED FIRST, FOLLOWED   #
-#  BY THE SERVER, THEN THE CLIENT PROGRAM                               #
+#  BY THE SERVER, THEN THE CLIENT PROGRAM. RUNS ON PYTHON3.             #
 #########################################################################
 
 import json

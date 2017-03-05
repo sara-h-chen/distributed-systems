@@ -3,7 +3,7 @@
 #  Pyro4                                                                 #
 ##########################################################################
 #  THIS SCRIPT SHOULD BE RUN FIRST, BEFORE THE SERVER AND CLIENT, AS IT  #
-#  IS USED TO BEGIN THE NAMESERVER.                                      #
+#  IS USED TO BEGIN THE NAMESERVER. RUNS ON PYTHON3.                     #
 ##########################################################################
 
 import sys

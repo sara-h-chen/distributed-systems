@@ -3,10 +3,10 @@
 #  Stores user information, including usernames, passwords and orders     #
 #  The @property notation before a function allows it to behave like      #
 #  the dot-notation attributes since they have been disabled due to       #
-#  security concerns.
+#  security concerns.                                                     #
 ###########################################################################
 #  WARNING: THE FRONT-END PROGRAM NEEDS TO BE STARTED FIRST, FOLLOWED BY  #
-#  THE SERVER, THEN THE CLIENT PROGRAM                                    #
+#  THE SERVER, THEN THE CLIENT PROGRAM. RUNS ON PYTHON3.                  #
 ###########################################################################
 
 import sys
@@ -195,7 +195,8 @@ class ComplexEncoder(json.JSONEncoder):
 #  Modifications made to allow crash recovery: every server should now be able  #
 #  to detect if it is the first server to be established. Its behavior changes  #
 #  accordingly. If the server is primary then it will be bound to the nameser-  #
-#  ver, which allows the passive replicas to pull data from it.                 #
+#  ver, which allows the passive replicas to pull data from it. Refer to        #
+#  comments in code below for full walkthrough of modifications.                #
 #################################################################################
 
 
