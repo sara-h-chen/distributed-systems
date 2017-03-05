@@ -117,11 +117,12 @@ class Server(object):
             except IndexError:
                 print("No data yet")
         self.registeredUsers.setNewState(registeredUserList)
-        # DEBUG
-        # try:
-        #     print(self.registeredUsers.userList[0].getOrderHistory)
-        # except IndexError:
-        #     print("No data yet")
+        # UNCOMMENT TO DEBUG REPLICATION
+        try:
+            for i in range(0, len(self.registeredUsers.userList)):
+                print(self.registeredUsers.userList[i].username + ": " + str(self.registeredUsers.userList[i].getOrderHistory))
+        except IndexError:
+            print("No data yet")
 
     def getNewState(self):
         return ComplexEncoder().encode(self.getAllRegisteredUsers)
@@ -211,7 +212,9 @@ if __name__ == '__main__':
     else:
         primary = Pyro4.Proxy("PYRONAME:pyro.server")
         while True:
-            newState = primary.getNewState()
-            server.setNewState(newState)
-            time.sleep(20)
+            try:
+                newState = primary.getNewState()
+                server.setNewState(newState)
+                time.sleep(30)
+            except:
 
