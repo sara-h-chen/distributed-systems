@@ -11,6 +11,8 @@
 
 import sys
 import Pyro4.util
+import time
+import json
 
 sys.excepthook = Pyro4.util.excepthook
 
@@ -32,6 +34,9 @@ class RegisteredUsers(object):
 
     def addUser(self, user):
         self.userList.append(user)
+
+    def setNewState(self, listOfUsers):
+        self.userList = listOfUsers
 
 
 @Pyro4.expose
@@ -62,6 +67,9 @@ class User(object):
 
     def cancelOrder(self, index):
         del self.orderHistory[index]
+
+    def setNewState(self, listOfOrders):
+        self.orderHistory = listOfOrders
 
 
 ##############################################################
@@ -94,6 +102,29 @@ class Server(object):
             if user.getUsername == username:
                 return True
         return False
+
+    def setNewState(self, newState):
+        newState = json.loads(newState)
+        registeredUserList = []
+        for i in range(0, len(newState)):
+            try:
+                # Take each user out of encoded list
+                userObject = newState[i]
+                # Instantiate a new user
+                user = User(userObject[0], userObject[1])
+                user.setNewState(userObject[2])
+                registeredUserList.append(user)
+            except IndexError:
+                print("No data yet")
+        self.registeredUsers.setNewState(registeredUserList)
+        # DEBUG
+        # try:
+        #     print(self.registeredUsers.userList[0].getOrderHistory)
+        # except IndexError:
+        #     print("No data yet")
+
+    def getNewState(self):
+        return ComplexEncoder().encode(self.getAllRegisteredUsers)
 
     def authenticate(self, usernameIndex, passwordGiven):
         if passwordGiven == self.getRegisteredUsers.getUserList[usernameIndex].getPassword:
@@ -136,17 +167,51 @@ class Server(object):
     def returnAllRegisteredUsers(self):
         return self.getAllRegisteredUsers
 
+
+############################################################
+#                   CUSTOM SERIALIZERS                     #
+############################################################
+#  Required because Pyro4 does not allow classes to be     #
+#  sent over the network due to security concerns          #
+############################################################
+
+class ComplexEncoder(json.JSONEncoder):
+    def default(self, user):
+        if isinstance(user, User):
+            return [user.username, user.password, user.orderHistory]
+        return json.JSONEncoder.default(self, user)
+
+
 ############################################################
 #                      MAIN METHOD                         #
 ############################################################
 
 if __name__ == '__main__':
-    # Creates a Server instance
-    server = Server(True)
+    # Finds the nameserver
     nameserv = Pyro4.locateNS()
-    daemon = Pyro4.Daemon()
-    # Binds the Server instance to the nameserver
-    uri = daemon.register(server)
-    nameserv.register("pyro.server", uri)
-    print("Server is now ready")
-    daemon.requestLoop()
+    try:
+        # Checks if a primary has already been
+        # registered with the nameserver
+        uri = nameserv.lookup("pyro.server")
+        print(uri)
+        # If True, create a passive replica
+        server = Server(False)
+    # If a primary cannot be found, then create one
+    except Exception:
+        server = Server(True)
+
+    # Depending on type of server, change behavior
+    if server.isPrimary:
+        daemon = Pyro4.Daemon()
+        # Binds the Server instance to the nameserver
+        uri = daemon.register(server)
+        nameserv.register("pyro.server", uri)
+        print("Server is now ready")
+        daemon.requestLoop()
+    else:
+        primary = Pyro4.Proxy("PYRONAME:pyro.server")
+        while True:
+            newState = primary.getNewState()
+            server.setNewState(newState)
+            time.sleep(20)
+

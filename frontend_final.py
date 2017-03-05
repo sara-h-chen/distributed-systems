@@ -20,20 +20,6 @@ sys.excepthook = Pyro4.util.excepthook
 
 
 #####################################################################
-#             SESSION CLASS MAINTAINS REQUESTS NUMBERS              #
-#####################################################################
-
-class Session(object):
-    requestId = 0
-
-    def __init__(self):
-        self.requestId = 0
-
-    def nextRequest(self):
-        self.requestId += 1
-        return self.requestId
-
-#####################################################################
 #                    SOCKET-SPECIFIC FUNCTIONS                      #
 #####################################################################
 
@@ -48,7 +34,6 @@ def read_tcp(serverSocket, server):
 
 
 def handler(clientsock, addr, server):
-    session = Session()
     data = clientsock.recv(1024)
     if data:
         username = data.decode("utf-8")

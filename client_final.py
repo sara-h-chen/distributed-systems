@@ -6,6 +6,7 @@
 #  WARNING: THE FRONT-END PROGRAM NEEDS TO BE STARTED FIRST, FOLLOWED   #
 #  BY THE SERVER, THEN THE CLIENT PROGRAM                               #
 #########################################################################
+
 import json
 import socket
 
