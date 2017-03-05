@@ -105,10 +105,11 @@ class Server(object):
 
     def setNewState(self, newState):
         newState = json.loads(newState)
+        # Create a temporary list to hold new state
         registeredUserList = []
         for i in range(0, len(newState)):
             try:
-                # Take each user out of encoded list
+                # Take each User object out of encoded list
                 userObject = newState[i]
                 # Instantiate a new user
                 user = User(userObject[0], userObject[1])
@@ -165,6 +166,7 @@ class Server(object):
         print("Deleted item " + str(int(orderToCancel) + 1))
         return True
 
+    # Function to test return of attribute
     def returnAllRegisteredUsers(self):
         return self.getAllRegisteredUsers
 
@@ -173,7 +175,7 @@ class Server(object):
 #                   CUSTOM SERIALIZERS                     #
 ############################################################
 #  Required because Pyro4 does not allow classes to be     #
-#  sent over the network due to security concerns          #
+#  sent over the network, due to security concerns         #
 ############################################################
 
 class ComplexEncoder(json.JSONEncoder):
@@ -183,9 +185,19 @@ class ComplexEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, user)
 
 
-############################################################
-#                      MAIN METHOD                         #
-############################################################
+#################################################################################
+#                                  MAIN METHOD                                  #
+#################################################################################
+#  If you would like to see the code pre-modification, please refer to:         #
+#  https://github.com/sara-h-chen/distributed-systems/commit/                   #
+#  01d54acfd766e168eb34fbe530bc0ba9943e6a75                                     #
+#################################################################################
+#  Modifications made to allow crash recovery: every server should now be able  #
+#  to detect if it is the first server to be established. Its behavior changes  #
+#  accordingly. If the server is primary then it will be bound to the nameser-  #
+#  ver, which allows the passive replicas to pull data from it.                 #
+#################################################################################
+
 
 if __name__ == '__main__':
     # Finds the nameserver
@@ -211,14 +223,19 @@ if __name__ == '__main__':
             daemon.requestLoop()
     else:
         with Pyro4.Proxy("PYRONAME:pyro.server") as primary:
+            # Try to pull data from the primary continuously
             while True:
                 try:
                     newState = primary.getNewState()
                     server.setNewState(newState)
-                    # This is less time than it usually takes for a server to restart
+                    # This is set to less time than it usually takes for a server to restart
                     time.sleep(5)
                 except Exception:
                     checkConnection = nameserv.lookup("pyro.server")
+                    # If the connection from the initial primary has failed
+                    # and the URI remains the same in the nameserver, take over
+                    # and remove; otherwise, you know that another replica has taken over
+                    # as primary
                     if checkConnection == uri:
                         # Ensure that a newly established/rebooted server cannot become primary
                         # by checking the data that the session carries
@@ -231,5 +248,6 @@ if __name__ == '__main__':
                             nameserv.register("pyro.server", uri)
                             print("Backup has taken over")
                             daemon.requestLoop()
+                    # Refresh URI if another replica has taken over as primary
                     primary = Pyro4.Proxy("PYRONAME:pyro.server")
                     continue

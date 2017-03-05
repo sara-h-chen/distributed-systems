@@ -1,11 +1,9 @@
 ##########################################################################
-#  Distributed Systems Summative: Front-End Program, implemented
-#  using Pyro4
-#
+#  Distributed Systems Summative: Front-End Program, implemented using   #
+#  Pyro4                                                                 #
 ##########################################################################
-#  THIS SCRIPT SHOULD BE RUN FIRST, BEFORE THE SERVER AND CLIENT, AS IT
-#  IS USED TO BEGIN THE NAMESERVER.
-#
+#  THIS SCRIPT SHOULD BE RUN FIRST, BEFORE THE SERVER AND CLIENT, AS IT  #
+#  IS USED TO BEGIN THE NAMESERVER.                                      #
 ##########################################################################
 
 import sys
@@ -59,7 +57,7 @@ def handler(clientsock, addr):
             clientsock.sendto(bytes(str(usernameIndex), "utf-8"), addr)
         usernameIndex = server.getUsernameIndex(username)
         while True:
-            # Establish Proxy before every command, to ensure that it connects to a server
+            # Refresh Proxy before every command, to guarantee it connects to a running server
             server = Pyro4.Proxy("PYRONAME:pyro.server")
             command = clientsock.recv(1024)
             if command:
