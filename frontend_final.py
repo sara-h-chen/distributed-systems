@@ -28,12 +28,14 @@ def read_udp(serverSocket):
     data, addr = serverSocket.recvfrom(1024)
 
 
-def read_tcp(serverSocket, server):
+def read_tcp(serverSocket):
     connectionSocket, addr = serverSocket.accept()
-    _thread.start_new_thread(handler, (connectionSocket, addr, server))
+    _thread.start_new_thread(handler, (connectionSocket, addr))
 
 
-def handler(clientsock, addr, server):
+def handler(clientsock, addr):
+    # Establish Proxy only where needed to ensure it is up-to-date
+    server = Pyro4.Proxy("PYRONAME:pyro.server")
     data = clientsock.recv(1024)
     if data:
         username = data.decode("utf-8")
@@ -57,6 +59,8 @@ def handler(clientsock, addr, server):
             clientsock.sendto(bytes(str(usernameIndex), "utf-8"), addr)
         usernameIndex = server.getUsernameIndex(username)
         while True:
+            # Establish Proxy before every command, to ensure that it connects to a server
+            server = Pyro4.Proxy("PYRONAME:pyro.server")
             command = clientsock.recv(1024)
             if command:
                 command = bytes.decode(command, "utf-8")
@@ -82,7 +86,7 @@ def handler(clientsock, addr, server):
 
 
 # Creates new sockets for every thread that connects to the server
-def createSocket(server):
+def createSocket():
     serverPort = 12500
     serverAddress = ('', 10000)
     # Create socket for TCP
@@ -102,7 +106,7 @@ def createSocket(server):
 
         for s in inputready:
             if s == tcp:
-                read_tcp(s, server)
+                read_tcp(s)
             elif s == udp:
                 read_udp(s)
             else:
@@ -116,7 +120,4 @@ def createSocket(server):
 if __name__ == '__main__':
     # Spin off a new thread to run the nameserver
     _thread.start_new_thread(Pyro4.naming.startNSloop, ())
-    server = Pyro4.Proxy("PYRONAME:pyro.server")
-    createSocket(server)
-
-    # batch(proxy)
+    createSocket()

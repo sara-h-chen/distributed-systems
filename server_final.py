@@ -215,17 +215,21 @@ if __name__ == '__main__':
                 try:
                     newState = primary.getNewState()
                     server.setNewState(newState)
-                    time.sleep(30)
+                    # This is less time than it usually takes for a server to restart
+                    time.sleep(5)
                 except Exception:
                     checkConnection = nameserv.lookup("pyro.server")
                     if checkConnection == uri:
-                        nameserv.remove("pyro.server")
-                        print("Connection lost! Taking over as primary... ")
-                        server.primary = True
-                        daemon = Pyro4.Daemon()
-                        uri = daemon.register(server)
-                        nameserv.register("pyro.server", uri)
-                        print("Backup has taken over")
-                        daemon.requestLoop()
+                        # Ensure that a newly established/rebooted server cannot become primary
+                        # by checking the data that the session carries
+                        if server.registeredUsers.userList:
+                            nameserv.remove("pyro.server")
+                            print("Connection lost! Taking over as primary... ")
+                            server.primary = True
+                            daemon = Pyro4.Daemon()
+                            uri = daemon.register(server)
+                            nameserv.register("pyro.server", uri)
+                            print("Backup has taken over")
+                            daemon.requestLoop()
                     primary = Pyro4.Proxy("PYRONAME:pyro.server")
                     continue
