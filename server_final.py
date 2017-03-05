@@ -230,7 +230,7 @@ if __name__ == '__main__':
                     newState = primary.getNewState()
                     server.setNewState(newState)
                     # This is set to less time than it usually takes for a server to restart
-                    time.sleep(5)
+                    time.sleep(3)
                 except Exception:
                     checkConnection = nameserv.lookup("pyro.server")
                     # If the connection from the initial primary has failed

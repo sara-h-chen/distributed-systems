@@ -1,0 +1,26 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{layout}
+\usepackage{indentfirst}
+\usepackage{url}
+\setlength{\voffset}{-0.3in}
+
+%opening
+\title{Distributed Systems Summative Assignment}
+\author{000280744: jrvh15 - Z0966651}
+
+\begin{document}
+
+\maketitle
+
+\section{Part 1}
+\subsection{Generic Workflow with Passive Replication} 
+In passive replication, all requests made by the client are executed by the 
+primary replica, which, upon completion of the request, would then send an 
+update message to its backups. The basic principle behind this is that the 
+backups do not execute any invocations but instead only apply the changes 
+produced by the invocation execution at the primary server. As such, request 
+invocations do not need to be coordinated between the backup servers.
+
+\end{document}

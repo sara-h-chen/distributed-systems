@@ -23,4 +23,26 @@ Passive replication ensures information availability because even in the event t
 - perform address expansion to ensure that messages sent to the group reach all replicas
 With this, we can provide view-synchronous communication, which is an extension of reliable multicast. A view is a list of the processes currently belonging to the group and when membership changes, a new view is sent to all members. the backups send an acknowledgement to the primary server to confirm receipt of the information, and in case of non-ack from a replica, the message will be re-sent by the primary server. All messages that originate in a given view must be delivered before a new view is delivered. This form of communication is costly and may require serveral rounds of communication for each multicast. Because each replica has the same record of updates, passive replication can tolerate n crash failures if n+1 replicas are present. The view-synchronous semantics guarantee that either all the backups or none of them will deliver any given update before delivering the new view; the primary and the surviving backups all agree on whether any particular client's update has or has not been processed.
 
+3)(a) Suppose the primary server may fail sometimes. Explain what procedures should be
+introduced to the distributed system in order to resolve this failure situation. In addition, if the
+failed primary server recovers, describe what should be done to allow this server to run as
+part of the distributed system again.
 
+The client should not connect directly to the primary server, as this would mean that the failure of the primary server would cause the entire system to fail. Instead, the front-end should reroute all the requests that it receives from the client to the servers, and is responsibe for finding a new server to route the request to when the primary fails.
+
+The front-end provides transparency through the RMI. This means that new sockets will not have to be established manually, each time a connection goes down. if there have been failures, new primary servers may take over, meaning the URI has changed, so you would just need to lookup the value of the URI each time to ensure that you connect to the server.
+
+The passive replicas should hold the latest state of the system and be ready to take over as the primary server upon failure. In such a case, the other replicas should be able to begin pulling the latest state from the new primary server, and as such should be able to reroute their requests dynamically, and this is achieved through the user of a proxy and a nameserver, which allows you to reroute to the correct server using a name, and hides the specific URI by holding it in a nameserver, which implements a network service for providing responses to queries against a directory service.
+
+Using a proxy and a nameserver allows you to dynamically reconnect to servers, without having to specify URIs and ports. This allows you to use any free port, and prevents the situation where a new server is unable to connect because a port is still being held, due to a process not being terminated correctly.
+
+The system should be able to detect changes in connection. Given that each server is begun at different times, and a small time frame between each request to the primary server, at least one server should be able to detect the exact moment (+/- 1 second) that the primary server fails. To reduce the load on the server and the network, you don't want this time frame to be too close together.
+
+If the failed primary server recovers, then it should simply be able to reconnect to the distributed system as a passive replica, instead of reestablishing it as the primary, as this would require more overhead. It would have to be able to detect that there already is a primary server and thus establish itself as a passive replica.
+
+3)(i) A description of all necessary modifications made to the servers, the front-end and the client programs, in terms of their program codes or how they are executed during
+runtime.
+
+Client program -- no changes; transparency from front-end
+Front-end -- only have to refresh Proxy before every command to ensure that the URI is for the running primary. 
+Server program -- upon failure of the primary, an exception will occur and the passive replicas will realize that they can no longer pull data from the primary to update their state. In such a case, they will check the nameserver to see if it has changed; if another passive replica has taken over the role of the primary, then the server will begin pulling data from the new primary. Otherwise, it will take over the role of primary itself. It will remove the previous primary's URI from the nameserver, updating it with its own URI, so that the other servers would now be able to pull data from it. A restriction is placed upon the server: if it does not carry any data, it is highly likely that the server had just recovered from failure, and does not carry the latest system state, and as such, will not be allowed to take over as primary. When the previous primary server recovers from failure, it will rejoin the distributed system as a passive replica, as it will be able to detect that there is now a new primary server, which it can then update its own state from.
