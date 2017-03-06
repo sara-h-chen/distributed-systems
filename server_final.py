@@ -192,11 +192,14 @@ class ComplexEncoder(json.JSONEncoder):
 #  https://github.com/sara-h-chen/distributed-systems/commit/                   #
 #  01d54acfd766e168eb34fbe530bc0ba9943e6a75                                     #
 #################################################################################
-#  Modifications made to allow crash recovery: every server should now be able  #
-#  to detect if it is the first server to be established. Its behavior changes  #
-#  accordingly. If the server is primary then it will be bound to the nameser-  #
-#  ver, which allows the passive replicas to pull data from it. Refer to        #
-#  comments in code below for full walkthrough of modifications.                #
+#  Modifications made to allow crash recovery: instead of just creating the     #
+#  primary servers separately from the passive replicas, the server should now  #
+#  detect if it is the first server to be established, or if there have been    #
+#  changes to the connection to the primary server. If it is not the first then #
+#  the server will simply join the system as a passive replica. If the server   #
+#  is primary then it will be bound to the nameserver, which allows the passive #
+#  replicas to pull data from it. Refer to comments in code below for full      #
+#  walkthrough of modifications.                                                #
 #################################################################################
 
 
@@ -229,7 +232,8 @@ if __name__ == '__main__':
                 try:
                     newState = primary.getNewState()
                     server.setNewState(newState)
-                    # This is set to less time than it usually takes for a server to restart
+                    # This is set to less time than it usually takes for a server to restart.
+                    # It will not pull continuously to reduce network traffic
                     time.sleep(3)
                 except Exception:
                     checkConnection = nameserv.lookup("pyro.server")
